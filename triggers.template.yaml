@@ -1,0 +1,7 @@
+triggers:
+  - id: my-service-prod
+    token: my-access-token-1
+    script: /home/brickpop/deploy-prod.sh
+  - id: my-service-dev
+    token: my-access-token-2
+    script: /home/brickpop/deploy-dev.sh
