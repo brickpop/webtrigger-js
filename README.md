@@ -30,6 +30,8 @@ cd webtrigger
 npm install
 ```
 
+(See below if you need to install NodeJS)
+
 ### Start the service
 
 Start the Node service:
@@ -143,5 +145,5 @@ cp ./node /usr/local/bin
 ./npm install -g n
 n 12
 cd ../..
-rm -Rf ./node-v$NODE_VERSION-linux-x64
+rm -Rf ./node-v$NODE_VERSION-linux-x64.tar.xz
 ```
