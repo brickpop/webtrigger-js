@@ -24,10 +24,10 @@ Create the scripts for your triggers and make sure that they are executable.
 ### Get webtrigger
 
 ```sh
-cd /opt
-git clone https://github.com/brickpop/webtrigger.git
-cd webtrigger
-npm install
+$ cd /opt
+$ git clone https://github.com/brickpop/webtrigger.git
+$ cd webtrigger
+$ npm install
 ```
 
 (See below if you need to install NodeJS)
@@ -39,7 +39,7 @@ Start the Node service:
 ```sh
 $ node .
 Using ./triggers.yaml as the config file
-Listening to port 5000
+Listening on http://0.0.0.0:5000
 ```
 
 Using an env variable to point to the config file
@@ -48,7 +48,7 @@ Using an env variable to point to the config file
 $ export TRIGGERS_FILE=/home/user/my-triggers.yaml
 $ node index
 Using /home/user/my-triggers.yaml as the config file
-Listening to port 5000
+Listening on http://0.0.0.0:5000
 ```
 
 Passing the config file as an argument
@@ -56,7 +56,7 @@ Passing the config file as an argument
 ```sh
 $ node index /home/user/my-triggers-file.yaml
 Using /home/user/my-triggers-file.yaml as the config file
-Listening to port 5000
+Listening on http://0.0.0.0:5000
 ```
 
 Override the default port if needed:
@@ -64,7 +64,7 @@ Override the default port if needed:
 ```sh
 $ PORT=1234 node index
 Using ./triggers.yaml as the config file
-Listening to port 1234
+Listening on http://0.0.0.0:1234
 ```
 
 ### Call a URL
@@ -137,13 +137,42 @@ $ sudo systemctl start webtrigger.service
 To install NodeJS on a Linux server:
 
 ```sh
-NODE_VERSION=12.16.1
-curl -O https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-x64.tar.xz
-tar xfv node-v$NODE_VERSION-linux-x64.tar.xz
-cd node-v$NODE_VERSION-linux-x64/bin
-cp ./node /usr/local/bin
-./npm install -g n
-n 12
-cd ../..
-rm -Rf ./node-v$NODE_VERSION-linux-x64.tar.xz
+$ NODE_VERSION=12.16.1
+$ curl -O https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-x64.tar.xz
+$ tar xfv node-v$NODE_VERSION-linux-x64.tar.xz
+$ cd node-v$NODE_VERSION-linux-x64/bin
+$ cp ./node /usr/local/bin
+$ ./npm install -g n
+$ n 12
+$ cd ../..
+$ rm -Rf ./node-v$NODE_VERSION-linux-x64.tar.xz
+```
+
+### TLS encryption
+
+On a typical scenario you will want access tokens to travel encrypted. However, if you run a reverse proxy like Nginx as a Docker container, you may have trouble forwarding the HTTP request to webtrigger on the host system.
+
+You can enable TLS encryption right on the NodeJS service itself:
+
+```sh
+# using a self-signed certificate as an example
+$ openssl req -nodes -new -x509 -keyout server.key -out server.cert
+# enter any dummy data
+
+$ chmod 400 server.key server.cert
+```
+
+Then, pass the `TLS_CERT` and `TLS_KEY` environment variables:
+
+```sh
+$ PORT=1234 TLS_CERT=server.cert TLS_KEY=server.key node index
+Using ./triggers.yaml as the config file
+Listening on https://0.0.0.0:1234
+```
+
+If you don't use a real certificate, tell `curl` to ignore the certificate credentials:
+
+```sh
+$ curl --insecure -H "Authorization: Bearer my-access-token-1" -X POST https://my-host:5000/my-service-prod
+OK
 ```

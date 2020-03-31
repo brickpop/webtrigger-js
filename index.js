@@ -1,5 +1,7 @@
 const fs = require("fs")
 const path = require("path")
+const http = require("http")
+const https = require("https")
 const express = require("express")
 const YAML = require('yaml')
 const { spawn } = require("child_process")
@@ -17,8 +19,24 @@ function main() {
     })
 
     const port = process.env.PORT || 5000
-    console.log("Listening to port", port)
-    app.listen(port)
+
+    if (process.env.TLS_CERT && process.env.TLS_KEY) {
+        if (!fs.existsSync(process.env.TLS_CERT)) {
+            console.error("The TLS certificate file does not exist")
+            process.exit(1)
+        }
+        if (!fs.existsSync(process.env.TLS_KEY)) {
+            console.error("The TLS key file does not exist")
+            process.exit(1)
+        }
+        https.createServer({
+            key: fs.readFileSync(process.env.TLS_KEY),
+            cert: fs.readFileSync(process.env.TLS_CERT)
+        }, app).listen(port, () => console.log("Listening on https://0.0.0.0:" + port))
+    }
+    else {
+        http.createServer(app).listen(port, () => console.log("Listening on http://0.0.0.0:" + port))
+    }
 }
 
 // EXAMPLE CALL:

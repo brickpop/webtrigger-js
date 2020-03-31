@@ -1,2 +1,4 @@
 node_modules
 triggers.yaml
+server.key
+server.cert
