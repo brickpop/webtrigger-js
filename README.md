@@ -71,6 +71,8 @@ Listening on http://0.0.0.0:1234
 
 With the `triggers.yaml` example above:
 
+#### Trigger the task
+
 ```sh
 $ curl -H "Authorization: Bearer my-access-token-1" -X POST http://localhost:5000/my-service-prod
 OK
@@ -80,6 +82,21 @@ $ curl -H "Authorization: Bearer bad-token" -X POST http://localhost:5000/my-ser
 Not found
 $ curl -H "Authorization: Bearer my-access-token-2" -X POST http://localhost:5000/does-not-exist
 Not found
+```
+
+Note that invoking a task while already running will restart it after the current execution completes
+
+#### Get the task status
+
+```sh
+$ curl -H "Authorization: Bearer my-access-token-1" http://localhost:5000/my-service-prod
+{"id":"my-service-prod","status":"unstarted"}
+$ curl -H "Authorization: Bearer my-access-token-1" http://localhost:5000/my-service-prod
+{"id":"my-service-prod","status":"running"}
+$ curl -H "Authorization: Bearer my-access-token-1" http://localhost:5000/my-service-prod
+{"id":"my-service-prod","status":"done"}
+$ curl -H "Authorization: Bearer my-access-token-1" http://localhost:5000/my-service-prod
+{"id":"my-service-prod","status":"failed"}
 ```
 
 ### Make it persistent
