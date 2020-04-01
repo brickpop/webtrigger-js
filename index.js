@@ -127,6 +127,7 @@ function spawnTask(trigger) { // returns string
     const idx = tasks.findIndex(task => task.id == trigger.id)
     if (idx >= 0 && tasks[idx].status == "running") {
         tasks[idx].restartOnCompletion = true
+        console.warn(`[${trigger.id}]  Attempting to trigger the action while active. Will restart when done.`)
         return "Already running, will restart when completed"
     }
     else if (idx < 0) {
