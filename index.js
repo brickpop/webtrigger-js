@@ -13,6 +13,17 @@ function main() {
     triggers = readTriggersFile()
     const app = express()
 
+    app.use((req, res, next) => {
+        res.header('Access-Control-Allow-Origin', '*')
+        res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization')
+        next()
+
+        app.options('*', (req, res) => {
+            res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+            res.send()
+        })
+    })
+
     app.get("/:id", getTaskStatus)
     app.post("/:id", triggerTask)
     app.use((req, res) => {
@@ -145,10 +156,10 @@ function spawnTask(trigger) { // returns string
         cwd: path.dirname(trigger.script)
     })
     child.stdout.on('data', function (data) {
-        console.log(`[${trigger.id}]  ${data.toString()}`);
+        console.log(`[${trigger.id}]  ${data.toString()}`)
     })
     child.stderr.on('data', function (data) {
-        console.error(`[${trigger.id}]  ${data.toString()}`);
+        console.error(`[${trigger.id}]  ${data.toString()}`)
     })
     child.on('close', code => {
         const idx = tasks.findIndex(task => task.id == trigger.id)
