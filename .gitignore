@@ -2,3 +2,6 @@ node_modules
 triggers.yaml
 server.key
 server.cert
+privkey.pem
+cert.pem
+chain.pem
