@@ -7,12 +7,14 @@ const YAML = require('yaml')
 const { spawn } = require("child_process")
 
 let triggers = []
+let tasks = [] // { id: string, status: "running" | "done" | "failed", restartOnCompletion: boolean }
 
 function main() {
     triggers = readTriggersFile()
     const app = express()
 
-    app.post("/:id", handleRequest)
+    app.get("/:id", getTaskStatus)
+    app.post("/:id", triggerTask)
     app.use((req, res) => {
         console.error(`[ERROR] trigger not found: ${req.path}`)
         res.status(404).send("Not found")
@@ -42,7 +44,7 @@ function main() {
 // EXAMPLE CALL:
 // $ curl -H "Authorization: Bearer my-access-token" -X POST http://localhost:5000/my-trigger-prod
 
-async function handleRequest(req, res, next) {
+async function triggerTask(req, res, next) {
     try {
         if (!req.params.id || !req.get("Authorization")) return next()
 
@@ -50,7 +52,7 @@ async function handleRequest(req, res, next) {
         if (!bearerToken.startsWith("Bearer ")) return next()
         const token = bearerToken.substr(7)
 
-        const trigger = triggers.find(s => s.id === req.params.id)
+        const trigger = triggers.find(trigger => trigger.id === req.params.id)
         if (!trigger) return next()
         else if (trigger.token.trim() !== token.trim()) {
             console.error("[ERROR] Invalid request for", req.params.id, "with", token)
@@ -58,27 +60,34 @@ async function handleRequest(req, res, next) {
             return
         }
 
-        fs.accessSync(trigger.script, fs.constants.X_OK) // throws if not executable
-
-        console.log(`[${trigger.id}]  Starting ${trigger.script}`)
-
-        const child = spawn(trigger.script, {
-            cwd: path.dirname(trigger.script)
-        })
-        child.stdout.on('data', function (data) {
-            console.log(`[${trigger.id}]  ${data.toString()}`);
-        })
-        child.stderr.on('data', function (data) {
-            console.log(`[${trigger.id}]  ${data.toString()}`);
-        })
-        child.on('close', code => {
-            console.log(`[${trigger.id}]  DONE (status ${code})\n`)
-        })
-
-        res.send("OK")
+        res.send(spawnTask(trigger))
     } catch (err) {
         console.error("[ERROR]", err)
         res.status(404).send("Not found")
+    }
+}
+
+function getTaskStatus(req, res) {
+    if (!req.params.id || !req.get("Authorization")) return next()
+
+    const bearerToken = req.get("Authorization")
+    if (!bearerToken.startsWith("Bearer ")) return next()
+    const token = bearerToken.substr(7)
+
+    const trigger = triggers.find(trigger => trigger.id === req.params.id)
+    if (!trigger) return next()
+    else if (trigger.token.trim() !== token.trim()) {
+        console.error("[ERROR] Invalid request for", req.params.id, "with", token)
+        res.status(404).send("Not found")
+        return
+    }
+
+    // Already running?
+    const idx = tasks.findIndex(task => task.id == trigger.id)
+    if (idx >= 0) {
+        res.send({ id: tasks[idx].id, status: tasks[idx].status })
+    } else {
+        res.send({ id: req.params.id, status: "unstarted" })
     }
 }
 
@@ -111,6 +120,47 @@ function readTriggersFile() {
         console.error(err || "Error: The triggers file does not contain valid YAML data")
         process.exit(1)
     }
+}
+
+function spawnTask(trigger) { // returns string
+    // Already running?
+    const idx = tasks.findIndex(task => task.id == trigger.id)
+    if (idx >= 0 && tasks[idx].status == "running") {
+        tasks[idx].restartOnCompletion = true
+        return "Already running, will restart when completed"
+    }
+    else if (idx < 0) {
+        tasks.push({ id: trigger.id, status: "running", restartOnCompletion: false })
+    } else {
+        tasks[idx].status = "running"
+    }
+
+    fs.accessSync(trigger.script, fs.constants.X_OK) // throws if not executable
+
+    console.log(`[${trigger.id}]  Starting ${trigger.script}`)
+
+    const child = spawn(trigger.script, {
+        cwd: path.dirname(trigger.script)
+    })
+    child.stdout.on('data', function (data) {
+        console.log(`[${trigger.id}]  ${data.toString()}`);
+    })
+    child.stderr.on('data', function (data) {
+        console.error(`[${trigger.id}]  ${data.toString()}`);
+    })
+    child.on('close', code => {
+        const idx = tasks.findIndex(task => task.id == trigger.id)
+        if (idx >= 0) tasks[idx].status = (code == 0) ? "done" : "failed"
+
+        if (tasks[idx].restartOnCompletion) {
+            setTimeout(() => spawnTask(trigger), 1000)
+            tasks[idx].restartOnCompletion = false
+        }
+
+        console.log(`[${trigger.id}]  DONE (status ${code})\n`)
+    })
+
+    return "OK"
 }
 
 main()
