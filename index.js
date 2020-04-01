@@ -17,11 +17,10 @@ function main() {
         res.header('Access-Control-Allow-Origin', '*')
         res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization')
         next()
-
-        app.options('*', (req, res) => {
-            res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-            res.send()
-        })
+    })
+    app.options('*', (req, res) => {
+        res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        res.send()
     })
 
     app.get("/:id", getTaskStatus)
