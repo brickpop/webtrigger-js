@@ -33,7 +33,8 @@ function main() {
         }
         https.createServer({
             key: fs.readFileSync(process.env.TLS_KEY),
-            cert: fs.readFileSync(process.env.TLS_CERT)
+            cert: fs.readFileSync(process.env.TLS_CERT),
+            ca: process.env.TLS_CHAIN ? fs.readFileSync(process.env.TLS_CHAIN) : undefined
         }, app).listen(port, () => console.log("Listening on https://0.0.0.0:" + port))
     }
     else {

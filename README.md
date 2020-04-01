@@ -179,10 +179,18 @@ $ openssl req -nodes -new -x509 -keyout server.key -out server.cert
 $ chmod 400 server.key server.cert
 ```
 
-Then, pass the `TLS_CERT` and `TLS_KEY` environment variables:
+Then, pass the `TLS_CERT` and `TLS_KEY` environment variables. 
 
 ```sh
 $ PORT=1234 TLS_CERT=server.cert TLS_KEY=server.key node index
+Using ./triggers.yaml as the config file
+Listening on https://0.0.0.0:1234
+```
+
+You can pass `TLS_CHAIN` as well to specify the certificate chain of your CA.
+
+```sh
+$ PORT=1234 TLS_CERT=./server.pem TLS_KEY=./server.pem TLS_CHAIN=./chain.pem node index
 Using ./triggers.yaml as the config file
 Listening on https://0.0.0.0:1234
 ```
