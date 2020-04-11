@@ -127,7 +127,7 @@ $ curl -H "Authorization: Bearer my-access-token-1" http://localhost:5000/my-ser
 
 To make the service a system-wide daemon, create `/etc/systemd/system/webtrigger.service`
 
-```toml
+```
 [Unit]
 Description=Web Trigger service to allow running scripts from CI/CD jobs
 After=network.target
