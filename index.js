@@ -78,7 +78,7 @@ async function triggerTask(req, res, next) {
     }
 }
 
-function getTaskStatus(req, res) {
+function getTaskStatus(req, res, next) {
     if (!req.params.id || !req.get("Authorization")) return next()
 
     const bearerToken = req.get("Authorization")
